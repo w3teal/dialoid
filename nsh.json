@@ -1,0 +1,24 @@
+{
+  "name": "dialoid",
+  "id": "com.w3teal.dialoid",
+  "version": "1.0.0",
+  "build": 1,
+  "window": {
+    "defaultMode": "fullScreen"
+  },
+  "statusBar": {
+    "hidden": true
+  },
+  "ios": {
+    "infoPlist": {
+      "UISupportedInterfaceOrientations": [
+        "UIInterfaceOrientationLandscapeLeft",
+        "UIInterfaceOrientationLandscapeRight"
+      ],
+      "UISupportedInterfaceOrientations~ipad": [
+        "UIInterfaceOrientationLandscapeLeft",
+        "UIInterfaceOrientationLandscapeRight"
+      ]
+    }
+  }
+}

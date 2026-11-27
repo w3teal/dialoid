@@ -1,0 +1,34 @@
+Risa => ::
+	welcome to the dialoid test!
+	so this is the example of what you can build.
+	I will show you more.
+	you can make .dloid, add characters and point to the message.
+	if you literally want to use "\::" in dialog and not intently closing the dialogue group, just add backslash before a.k.a escape character.
+	eh, it's not like I care about you!
+	~hmph!~
+::
+
+Algebra => you think I really care with your last sentence?
+Risa => shut up! baka!
+Algebra => I think you should move forward...
+
+Risa => ::
+	alr... I think this is very simple language...
+	compared to renpy and narrat, this is very easy to eye.
+	one-line character, or character dialogue group, avoiding a repetition, a indent is optional but they're going to look good in code...
+	and create the dialogue just by simply make a new line and the message.
+	stream of consciousness writing going to be pretty good with this!
+	also you can make comment straight in the script when you feel something but not able to deceive it yet...
+	understand? if so, you can start create a .dloid scripts now!
+::
+
+Algebra => ok but why should using "\=\>" syntax and not others, like the usual (")?
+Risa => just like which one do you think catchier in eye?
+Algebra => ok. then what happens next? I want to know more about the backend stuffs.
+Risa => ::
+	ok. so .dloid are parsed into structured nodes that only happens in the background.
+	that data turned into a nsh views, which you can see right now.
+	that's it!
+	it's not like I want you to know everything!
+::
+Algebra => I pretty much don't care about it actually.
