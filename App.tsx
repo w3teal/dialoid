@@ -13,7 +13,16 @@ import initScriptUrl from "./scripts/init.dloid?url";
 import { GamePage } from "./src/game";
 import { MainMenu } from "./src/main-menu";
 import { parser, toDialogues } from "./src/parser";
-import { colors, fontFamily, screenHeight, screenWidth, VIEW_ASPECT } from "./src/theme";
+import {
+  AUTO_SPEEDS,
+  colors,
+  font,
+  fontFamily,
+  screenHeight,
+  screenWidth,
+  spacing,
+  VIEW_ASPECT,
+} from "./src/theme";
 
 const nav = createNavStack(["root"]);
 
@@ -36,11 +45,17 @@ function StatusMessage(props: { vw: number; children: string }) {
       style={{
         width: "100%",
         height: "100%",
-        padding: props.vw * 3,
+        padding: props.vw * spacing.statusPadding,
         justifyContent: "center",
       }}
     >
-      <Text style={{ fontFamily, fontSize: props.vw * 2, color: colors.text }}>
+      <Text
+        style={{
+          fontFamily,
+          fontSize: props.vw * font.status.size,
+          color: colors.text,
+        }}
+      >
         {props.children}
       </Text>
     </View>
@@ -51,6 +66,7 @@ function App() {
   const page = signal<Page>("menu");
   const pageMotion = createMotion();
   const transitioning = signal(false);
+  const autoSpeed = signal(AUTO_SPEEDS[2]);
 
   const transitionTo = async (next: Page) => {
     if (transitioning()) return;
@@ -116,6 +132,8 @@ function App() {
                 <If when={page() === "menu"}>
                   <MainMenu
                     vw={vw()}
+                    autoSpeed={autoSpeed()}
+                    onAutoSpeedChange={(speed) => autoSpeed.set(speed)}
                     disabled={transitioning()}
                     onPlay={() => void transitionTo("game")}
                   />
@@ -131,7 +149,12 @@ function App() {
                   </If>
                   <If when={script()}>
                     {(dialogues) => (
-                      <GamePage dialogues={dialogues()} vw={vw()} />
+                      <GamePage
+                        dialogues={dialogues()}
+                        vw={vw()}
+                        autoMsPerWord={autoSpeed().msPerWord}
+                        onMenu={() => void transitionTo("menu")}
+                      />
                     )}
                   </If>
                 </If>

@@ -1,22 +1,42 @@
-import { Image, Scroll, View, type ViewRef } from "nsh";
-import baseImage from "../assets/base.png";
+import { effect, resource, Scroll, View, type ViewRef } from "nsh";
+import { Canvas, sampleCanvasPalette } from "./canvas";
 import { createDialogueReveal, DialogueView } from "./dialogues";
+import { FALLBACK_PALETTE } from "./palette";
 import type { RenderedDialogue } from "./parser";
-import { colors, IMAGE_ASPECT } from "./theme";
+import { colors, spacing } from "./theme";
 import { DialoidButton } from "./ui";
 
 export function GamePage(props: {
   dialogues: RenderedDialogue[];
   vw: number;
+  autoMsPerWord: number;
+  onMenu: () => void;
 }) {
-  const { revealedMessageCounts, hasMoreMessages, revealNextMessage } =
-    createDialogueReveal(props.dialogues);
+  const {
+    revealedMessageCounts,
+    revealedCount,
+    hasMoreMessages,
+    auto,
+    toggleAuto,
+    revealNextMessage,
+  } = createDialogueReveal(props.dialogues, () => props.autoMsPerWord);
+  const palette = resource(() => sampleCanvasPalette());
   let bottomAnchor: ViewRef | undefined;
 
-  const handleContinuePress = () => {
-    revealNextMessage();
-    bottomAnchor?.reveal({ vertical: "end", animated: true });
+  const dialogueBackground = () => {
+    const [first, second, third] = palette() ?? FALLBACK_PALETTE;
+    return `linear-gradient(160deg, ${first} 40%, ${second} 50%, ${third} 100%)`;
   };
+
+  let mounted = false;
+  effect(() => {
+    revealedCount();
+    if (!mounted) {
+      mounted = true;
+      return;
+    }
+    bottomAnchor?.reveal({ vertical: "end", animated: true });
+  });
 
   return (
     <View
@@ -29,24 +49,7 @@ export function GamePage(props: {
         overflow: "hidden",
       }}
     >
-      <View
-        style={{
-          height: "100%",
-          aspectRatio: IMAGE_ASPECT,
-          flexShrink: 0,
-          justifyContent: "center",
-        }}
-      >
-        <Image
-          testID="base-image"
-          src={baseImage}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-          }}
-        />
-      </View>
+      <Canvas />
       <View
         style={{
           flex: 1,
@@ -54,13 +57,27 @@ export function GamePage(props: {
           minWidth: 0,
           position: "relative",
           overflow: "hidden",
+          backgroundColor: colors.background,
+          backgroundImage: dialogueBackground(),
         }}
       >
-        <Scroll style={{ flex: 1 }}>
+        <View
+          testID="dialogue-overlay"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            backgroundImage: colors.dialogueOverlay,
+            pointerEvents: "none",
+          }}
+        />
+        <Scroll style={{ flex: 1, position: "relative", zIndex: 1 }}>
           <View
             style={{
-              padding: props.vw * 3,
-              gap: props.vw * 4,
+              padding: props.vw * spacing.gamePadding,
+              gap: props.vw * spacing.gameGap,
               flexGrow: 1,
               width: "100%",
             }}
@@ -75,15 +92,46 @@ export function GamePage(props: {
                 />
               )}
             </Each>
-            <View style={{ alignItems: "flex-start" }}>
-              <DialoidButton
-                label="Continue >"
-                accessibilityLabel="Continue"
-                vw={props.vw}
-                testID="continue-button"
-                disabled={!hasMoreMessages()}
-                onPress={handleContinuePress}
-              />
+            <View
+              testID="dialogue-buttons"
+              style={{
+                flexDirection: "row",
+                gap: props.vw * spacing.buttonGroupGap,
+                width: "100%",
+              }}
+            >
+              <View style={{ flex: 2 }}>
+                <DialoidButton
+                  label="Continue"
+                  accessibilityLabel="Continue"
+                  vw={props.vw}
+                  testID="continue-button"
+                  disabled={!hasMoreMessages()}
+                  onPress={revealNextMessage}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <DialoidButton
+                  label="Auto"
+                  accessibilityLabel="Auto"
+                  vw={props.vw}
+                  testID="auto-button"
+                  activated={auto()}
+                  onPress={toggleAuto}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <DialoidButton
+                  label="Menu"
+                  accessibilityLabel="Menu"
+                  vw={props.vw}
+                  testID="menu-button"
+                  onPress={() => {
+                    if (auto()) toggleAuto();
+                    props.onMenu();
+                  }}
+                />
+              </View>
             </View>
             <View ref={bottomAnchor} />
           </View>

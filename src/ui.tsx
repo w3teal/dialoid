@@ -1,5 +1,5 @@
 import { signal, Text, View } from "nsh";
-import { colors, fontFamily } from "./theme";
+import { colors, font, fontFamily, spacing } from "./theme";
 
 /** Reusable pressable with the shared skewed border style. */
 export function DialoidButton(props: {
@@ -7,12 +7,12 @@ export function DialoidButton(props: {
   vw: number;
   onPress: () => void;
   disabled?: boolean;
+  activated?: boolean;
   testID?: string;
   accessibilityLabel?: string;
 }) {
   const hovered = signal(false);
   const isHovered = hovered();
-  const highlighted = !props.disabled && isHovered;
 
   return (
     <View
@@ -28,24 +28,24 @@ export function DialoidButton(props: {
         width: "100%",
         alignItems: "center",
         justifyContent: "center",
-        gap: props.vw * 0.25,
-        backgroundColor: highlighted ? colors.accent : colors.background,
-        borderWidth: props.vw * 0.25,
-        borderColor: colors.accent,
-        paddingHorizontal: props.vw * 0.5,
-        paddingVertical: props.vw * 0.5,
+        gap: props.vw * spacing.buttonGap,
+        backgroundColor: props.activated
+          ? "rgba(255, 255, 255)"
+          : "rgba(255, 255, 255, 0.22)",
+        paddingHorizontal: props.vw * spacing.buttonPadding,
+        paddingVertical: props.vw * spacing.buttonPadding,
         transitionProperty: "transform, background-color, color",
         transitionDuration: 100,
-        opacity: props.disabled ? 0.5 : 1,
+        opacity: props.disabled ? 0.5 : isHovered ? 0.85 : 1,
         cursor: props.disabled ? "not-allowed" : "pointer",
       }}
     >
       <Text
         style={{
           fontFamily,
-          fontSize: props.vw * 2,
-          lineHeight: props.vw * 2.5,
-          color: highlighted ? colors.background : colors.accent,
+          fontSize: props.vw * font.button.size,
+          lineHeight: props.vw * font.button.lineHeight,
+          color: props.activated ? colors.background : "rgba(255, 255, 255)",
           textAlign: "center",
         }}
       >

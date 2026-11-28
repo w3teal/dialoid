@@ -1,13 +1,14 @@
 import {
   computed,
   createMotion,
+  effect,
   signal,
   Text,
   View,
   type Accessor,
 } from "nsh";
 import type { RenderedDialogue } from "./parser";
-import { colors, fontFamily } from "./theme";
+import { colors, font, fontFamily, spacing } from "./theme";
 
 const POP_IN_DURATION_MS = 500;
 const SPEAKER_RULE_DURATION_MS = 1500;
@@ -36,8 +37,14 @@ const POP_IN = {
 export type DialogueReveal = {
   /** Visible message count per dialogue, derived from the reveal count. */
   revealedMessageCounts: Accessor<number[]>;
+  /** Total number of messages revealed so far. */
+  revealedCount: Accessor<number>;
   /** Whether there is another message left to reveal. */
   hasMoreMessages: Accessor<boolean>;
+  /** Whether auto-advance is running. */
+  auto: Accessor<boolean>;
+  /** Starts or stops auto-advance. */
+  toggleAuto: () => void;
   revealNextMessage: () => void;
 };
 
@@ -45,15 +52,18 @@ export type DialogueReveal = {
  * Tracks the reveal position as one count of visible messages. Per-dialogue
  * counts are derived from it, so the two representations cannot drift apart.
  * The first message is visible as soon as the game page is created.
+ *
+ * Auto-advance schedules the next message after one word-delay per word in the
+ * current message. Changing speed, message, or the toggle restarts the timer.
  */
 export function createDialogueReveal(
   dialogues: RenderedDialogue[],
+  autoMsPerWord: Accessor<number>,
 ): DialogueReveal {
-  const totalMessages = dialogues.reduce(
-    (total, dialogue) => total + dialogue.messages.length,
-    0,
-  );
+  const messages = dialogues.flatMap((dialogue) => dialogue.messages);
+  const totalMessages = messages.length;
   const revealedCount = signal(Math.min(1, totalMessages));
+  const auto = signal(false);
 
   const revealedMessageCounts = computed(() => {
     let remaining = revealedCount();
@@ -64,13 +74,32 @@ export function createDialogueReveal(
     });
   });
 
+  const currentMessage = computed(() => messages[revealedCount() - 1]);
   const hasMoreMessages = computed(() => revealedCount() < totalMessages);
 
   const revealNextMessage = () => {
     revealedCount.update((count) => Math.min(count + 1, totalMessages));
   };
 
-  return { revealedMessageCounts, hasMoreMessages, revealNextMessage };
+  const toggleAuto = () => auto.update((value) => !value);
+
+  effect(() => {
+    if (!auto() || !hasMoreMessages()) return;
+
+    const words =
+      currentMessage()?.trim().split(/\s+/).filter(Boolean).length ?? 0;
+    const timer = setTimeout(revealNextMessage, words * autoMsPerWord());
+    return () => clearTimeout(timer);
+  });
+
+  return {
+    revealedMessageCounts,
+    revealedCount,
+    hasMoreMessages,
+    auto,
+    toggleAuto,
+    revealNextMessage,
+  };
 }
 
 /** Message text with a scale/rotate entrance from the top-left anchor. */
@@ -81,10 +110,10 @@ function AnimatedMessage(props: { content: string; vw: number }) {
     <Text
       style={{
         fontFamily,
-        fontWeight: 800,
-        fontSize: props.vw * 2.75,
-        lineHeight: props.vw * 2.75 * 1.25,
-        color: colors.text,
+        fontWeight: font.message.weight,
+        fontSize: props.vw * font.message.size,
+        lineHeight: props.vw * font.message.lineHeight,
+        color: colors.dialogueText,
         transformOrigin: "top left",
         ...motion.style,
       }}
@@ -109,7 +138,7 @@ function Speaker(props: { name: string; vw: number }) {
       style={{
         flexDirection: "row",
         alignItems: "center",
-        gap: props.vw * 2,
+        gap: props.vw * spacing.speakerGap,
         transformOrigin: "top left",
         ...motion.style,
       }}
@@ -117,9 +146,9 @@ function Speaker(props: { name: string; vw: number }) {
       <Text
         style={{
           fontFamily,
-          fontSize: props.vw * 2,
-          lineHeight: props.vw * 2.5,
-          color: colors.text,
+          fontSize: props.vw * font.speaker.size,
+          lineHeight: props.vw * font.speaker.lineHeight,
+          color: colors.dialogueText,
         }}
       >
         {props.name}
@@ -128,7 +157,7 @@ function Speaker(props: { name: string; vw: number }) {
         style={{
           flex: 1,
           height: Math.max(1, props.vw * 0.15),
-          backgroundColor: colors.text,
+          backgroundColor: colors.dialogueText,
           transformOrigin: "left center",
           transform: line.transform,
         }}
@@ -147,7 +176,7 @@ export function DialogueView(props: {
     <If when={props.revealedMessageCounts()[props.index] > 0}>
       <View
         testID={`dialogue-${props.index}`}
-        style={{ gap: props.vw * 2, width: "100%" }}
+        style={{ gap: props.vw * spacing.dialogueGap, width: "100%" }}
       >
         <Speaker name={props.dialogue.speaker} vw={props.vw} />
         <Each of={props.dialogue.messages} key="index">
